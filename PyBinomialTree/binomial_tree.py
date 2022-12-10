@@ -12,8 +12,46 @@ import base_conditions
 from dateutil import parser
 
 class fit_tree:
+	'''
+	Instance variables:
+        
+    - ``S0`` - float
+	- ``r`` - float
+    - ``T`` - float or str
+    - ``N``  - int
+    - ``u`` - float or None
+    - ``sigma`` - float or None
+	- ``div_info`` - tuple or list
+	- ``spot_date`` - str or None
+
+    Public methods:
+        
+    - ``underlying_asset_summary()`` - print summary of underlying asset information
+	- ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
+	'''
     
     def __init__(self, S0, r, T, N, u = None, sigma = None, divi_info = (0, 0, None, None), spot_date = None):
+		"""
+            
+        :param S0: underlying asset spot price at t = 0
+        :type S0: float
+        :param r: current interest rate, annualized
+        :type r: float
+        :param T: Either time to expiry (in year) or expiry date
+        :type T: float or str
+        :param N: Number of steps in the binomial tree. 
+        :type N: int
+        :param u: The upward move per step, as per CRR model. Default None
+		:type u: float
+		:param sigma: Implied volatility. Default None
+		:type sigma: float
+		:param divi_info: A collection of 4 items, representing Known Dollar Dividends, Dividend Yield, Ex-div date and Div step
+        :type divi_info: tuple or list
+		:param spot_date: Spot date. Default None. If assigned, T needs to be the expiry date
+		:type spot_date: str
+
+
+        """
         
         assert (len(divi_info) == 4) and isinstance(divi_info, (tuple, list)), "divi_info needs to be a tuple or list type with 4 items!"
         assert bool(u) ^ bool(sigma), 'Please assign non-None values to either only u or sigma!' # assert using XOR logic gate
@@ -28,17 +66,17 @@ class fit_tree:
             assert time_to_exp.days >= 0, 'Spot date needs to be before T, the expiry date!'
             self.time_to_expiry = time_to_exp.days/365
         
-        div, div_yield, ex_div_date, ex_div_step = divi_info
+        div, div_yield, ex_div_date, ex_div_step = divi_info # unpack collection into the respective items
         
         self.underlying_asset = base_conditions.base_asset(S0, div, div_yield, ex_div_date, ex_div_step)
         self.interest_rate = base_conditions.base_rate(r).rate
         
         self.spot_date = spot_date
         self.step = N
-        self.delta_t = self.time_to_expiry/N
+        self.delta_t = self.time_to_expiry/N # step differential
         
         
-        self.u = u if u != None else np.exp(sigma * np.sqrt(self.delta_t))
+        self.u = u if u != None else np.exp(sigma * np.sqrt(self.delta_t)) # calculate u (if not provided)
         self.implied_vol = sigma if sigma != None else np.log(u) / np.sqrt(self.delta_t)
         
         if 0 < self.u <= 1:
@@ -51,6 +89,15 @@ class fit_tree:
         self.d = 1/self.u
         
     def underlying_asset_summary(self):
+		"""
+        Method to provide info on underlying asset.
+
+        Returns
+        -------
+        None.
+
+        """
+		
         print('UNDERLYING ASSET SUMMARY\n\
               +--------------------------------+\n\
               Spot price: \t ${:.2f}\n\
@@ -65,6 +112,14 @@ class fit_tree:
         self.underlying_asset.dividend_info()
         
     def underlying_asset_tree(self):
+		"""
+        Method to generate a matrix that illustrate the binomial tree model of the underlying asset.
+
+        Returns
+        -------
+        Numpy array.
+
+        """
         S = np.zeros([self.step+1,self.step+1])
         
         S[:, -1] = self.underlying_asset.spot_price*self.d**(np.arange(self.step, -1, -1))* self.u**(np.arange(0, self.step+1, 1))
@@ -81,7 +136,15 @@ class fit_tree:
         return S
     
     def __dividend_tree__(self):
-        
+        """
+        Method to generate a matrix that illustrate the binomial tree model of the dividend.
+		Only applies to known dollar dividends scenario.
+
+        Returns
+        -------
+        Numpy array.
+
+        """
         if self.underlying_asset.ex_div_date != None:
             div_day = self.underlying_asset.ex_div_date - self.spot_date
             div_step = div_day.days / self.delta_t
@@ -102,7 +165,9 @@ class fit_tree:
         
         logic_matrix_3 = logic_matrix_1*logic_matrix_2
         logic_matrix_3[:,div_step] = 1
-        
         logic_matrix_3[:,div_step:] = logic_matrix_3[:,div_step:].cumprod(axis =1)
+		
+		logic_matrix_4 = np.triu(np.ones((self.step + 1)))
+		logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
         
-        return self.underlying_asset.dividend_dollar * logic_matrix_3
+        return self.underlying_asset.dividend_dollar * logic_matrix_5
