@@ -167,7 +167,7 @@ class fit_tree:
         logic_matrix_3[:,div_step] = 1
         logic_matrix_3[:,div_step:] = logic_matrix_3[:,div_step:].cumprod(axis =1)
 		
-		logic_matrix_4 = np.triu(np.ones((self.step + 1)))
-		logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
+	logic_matrix_4 = np.triu(np.ones((self.step + 1)))
+	logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
         
         return self.underlying_asset.dividend_dollar * logic_matrix_5
