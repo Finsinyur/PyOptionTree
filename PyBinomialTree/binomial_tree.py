@@ -4,7 +4,6 @@ Created on Fri Dec  9 02:08:04 2022
 
 @author: leeca
 """
-
 import numpy as np
 import warnings
 
@@ -12,26 +11,25 @@ import base_conditions
 from dateutil import parser
 
 class fit_tree:
-	'''
-	Instance variables:
+    '''
+    Instance variables:
         
     - ``S0`` - float
-	- ``r`` - float
+    - ``r`` - float
     - ``T`` - float or str
     - ``N``  - int
     - ``u`` - float or None
     - ``sigma`` - float or None
-	- ``div_info`` - tuple or list
-	- ``spot_date`` - str or None
-
+    - ``div_info`` - tuple or list
+    - ``spot_date`` - str or None
     Public methods:
         
     - ``underlying_asset_summary()`` - print summary of underlying asset information
-	- ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
-	'''
+    - ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
+    '''
     
     def __init__(self, S0, r, T, N, u = None, sigma = None, divi_info = (0, 0, None, None), spot_date = None):
-		"""
+        """
             
         :param S0: underlying asset spot price at t = 0
         :type S0: float
@@ -42,15 +40,13 @@ class fit_tree:
         :param N: Number of steps in the binomial tree. 
         :type N: int
         :param u: The upward move per step, as per CRR model. Default None
-		:type u: float
-		:param sigma: Implied volatility. Default None
-		:type sigma: float
-		:param divi_info: A collection of 4 items, representing Known Dollar Dividends, Dividend Yield, Ex-div date and Div step
+        :type u: float
+        :param sigma: Implied volatility. Default None
+        :type sigma: float
+        :param divi_info: A collection of 4 items, representing Known Dollar Dividends, Dividend Yield, Ex-div date and Div step
         :type divi_info: tuple or list
-		:param spot_date: Spot date. Default None. If assigned, T needs to be the expiry date
-		:type spot_date: str
-
-
+        :param spot_date: Spot date. Default None. If assigned, T needs to be the expiry date
+        :type spot_date: str
         """
         
         assert (len(divi_info) == 4) and isinstance(divi_info, (tuple, list)), "divi_info needs to be a tuple or list type with 4 items!"
@@ -89,15 +85,13 @@ class fit_tree:
         self.d = 1/self.u
         
     def underlying_asset_summary(self):
-		"""
+        """
         Method to provide info on underlying asset.
-
         Returns
         -------
         None.
-
         """
-		
+        
         print('UNDERLYING ASSET SUMMARY\n\
               +--------------------------------+\n\
               Spot price: \t ${:.2f}\n\
@@ -112,13 +106,11 @@ class fit_tree:
         self.underlying_asset.dividend_info()
         
     def underlying_asset_tree(self):
-		"""
+        """
         Method to generate a matrix that illustrate the binomial tree model of the underlying asset.
-
         Returns
         -------
         Numpy array.
-
         """
         S = np.zeros([self.step+1,self.step+1])
         
@@ -138,12 +130,10 @@ class fit_tree:
     def __dividend_tree__(self):
         """
         Method to generate a matrix that illustrate the binomial tree model of the dividend.
-		Only applies to known dollar dividends scenario.
-
+        Only applies to known dollar dividends scenario.
         Returns
         -------
         Numpy array.
-
         """
         if self.underlying_asset.ex_div_date != None:
             div_day = self.underlying_asset.ex_div_date - self.spot_date
@@ -166,7 +156,7 @@ class fit_tree:
         logic_matrix_3 = logic_matrix_1*logic_matrix_2
         logic_matrix_3[:,div_step] = 1
         logic_matrix_3[:,div_step:] = logic_matrix_3[:,div_step:].cumprod(axis =1)
-		
+        
         logic_matrix_4 = np.triu(np.ones((self.step + 1)))
         logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
         
