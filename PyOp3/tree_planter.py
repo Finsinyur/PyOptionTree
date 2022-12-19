@@ -8,17 +8,28 @@ Created on Tue Dec 20 00:17:09 2022
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def visualize_tree(tree, plot_title = 'Binomial Tree'):
+def visualize_tree(tree, plot_title = 'Binomial Tree', **kwds):
     r"""
     Function to visualize binomial tree model, in order to translate matrix into 
     something user-friendly.
     
-    :param tree: The binomial tree, presented in a matrix.
-    :type tree: np.ndarray
-    :param plot_title: User-defined plot title.
-    :type tree: Str.
+    Parameters
+    ----------
+    tree : np.ndarray
+           The binomial tree, presented in a matrix.
+    
+    plot_title : str. 
+                 User-defined plot title.
+    
+    kwds : optional keywords. 
+           See networkx.draw_networkx() for a description of optional keywords.
 
-    :return: None
+    Examples
+    --------
+    >>> asset_1 = binomial_tree.fit_tree(300, 0.08, 0.333, 4, sigma = 0.3)
+    >>> asset_1_tree = asset_1.underlying_asset_tree()
+    >>> tree_planter.visualize_tree(asset_1_tree, node_color = '#B9FEA1')
+
 
     """
     
@@ -53,7 +64,7 @@ def visualize_tree(tree, plot_title = 'Binomial Tree'):
         position[node]=(node[0],N+2+node[0]-2*node[1])
     
     # Plot network graph
-    nx.draw(G, position)
+    nx.draw(G, position, **kwds)
     
     # Insert X-axis label
     plt.text(-1, -1, s = "Period N")
