@@ -114,10 +114,10 @@ class fit_tree:
         """
         S = np.zeros([self.step+1,self.step+1])
         
-        S[:, -1] = self.underlying_asset.spot_price*self.d**(np.arange(self.step, -1, -1))* self.u**(np.arange(0, self.step+1, 1))
+        S[:, -1] = self.underlying_asset.spot_price*self.u**(np.arange(self.step, -1, -1))* self.d**(np.arange(0, self.step+1, 1))
         
         for i in np.arange(self.step-1, -1, -1):
-            S[:i+1,i] = self.underlying_asset.spot_price*self.d**(np.arange(i, -1, -1))* self.u**(np.arange(0, i+1, 1))
+            S[:i+1,i] = self.underlying_asset.spot_price*self.u**(np.arange(i, -1, -1))* self.d**(np.arange(0, i+1, 1))
         
         if self.underlying_asset.dividend_dollar != 0:
             dividends = self.__dividend_tree__()
