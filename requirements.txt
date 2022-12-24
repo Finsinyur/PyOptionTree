@@ -1,0 +1,5 @@
+dateutil.__version__>=2.8.2
+matplotlib>=3.4.3
+networkx>=2.6.3
+numpy>=1.20.3
+pandas>=0.19
