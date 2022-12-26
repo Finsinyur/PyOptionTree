@@ -19,12 +19,14 @@ def european_option_tree(self):
     #find ST first
     #S[:,-1] = self.underlying_asset.spot_price_price*self.d**(np.arange(self.step,-1,-1))*self.u**(np.arange(0,self.step+1,1))                                           
     # Redundant; could make use of underlying_asset_tree
-    #tree = fit_tree(self)
-    #ST = tree.underlying_asset_tree()
-    #terminal_node = ST[:,-1]
+    tree = fit_tree(self)
+    S = tree.underlying_asset_tree()
+    terminal_node = S[:,-1]
                                                         
     #set the terminal price
-    V[:,-1] = np.maximum(0, disc*(self.spot_price-K)) if call == True else np.maximum(0, disc*(K-self.spot_price))
+    #V[:,-1] = np.maximum(0, disc*(self.spot_price-K)) if call == True else np.maximum(0, disc*(K-self.spot_price))
+    self.underlying_asset
+    V[:,-1] = np.maximum(0, disc*(terminal_node-K)) if call == True else np.maximum(0, disc*(K-terminal_node))                                                          
     # At terminal node, should be strike - terminal spot price, which should be the last col of the underlying asset tree
     
     #risk-neutral probability
