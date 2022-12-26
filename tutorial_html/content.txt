@@ -1,0 +1,5 @@
+This folder is a collection of the sample tutorial for PyOptionTree, saved in html for easy reference once downloaded. 
+The ipynb versions are saved in the same folder as pyop3.
+
+Tutorials:
+1. Example_1_Intro to PyOptionTree
