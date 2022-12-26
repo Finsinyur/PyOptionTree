@@ -19,6 +19,8 @@ def european_option_tree(self):
     #find ST first
     #S[:,-1] = self.underlying_asset.spot_price_price*self.d**(np.arange(self.step,-1,-1))*self.u**(np.arange(0,self.step+1,1))                                           
     # Redundant; could make use of underlying_asset_tree
+    
+    tree = np.zeros((self.step+1,self.step+1))                                                          
     tree = fit_tree(self)
     S = tree.underlying_asset_tree()
     terminal_node = S[:,-1]
