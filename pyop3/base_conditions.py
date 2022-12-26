@@ -1,12 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec  9 00:27:34 2022
-
-@author: leeca
-"""
-
 from datetime import datetime
 from dateutil import parser
+import warnings
 
 class base_asset:
     
@@ -25,7 +19,7 @@ class base_asset:
 
     """
     
-    def __init__(self, S0, div = 0, div_yield = 0, ex_div_date = None, ex_div_step = None):
+    def __init__(self, S0, dayfirst = True, div = 0, div_yield = 0, ex_div_date = None, ex_div_step = None):
         """
             
         :param S0: underlying asset spot price at t = 0
@@ -42,7 +36,6 @@ class base_asset:
 
         """
 
-        
         if ex_div_date is not None and ex_div_step is not None:
             raise ValueError('ex_div_date and ex_div_step cannot both be set!')
             
@@ -52,10 +45,14 @@ class base_asset:
         if ex_div_step != None:
             assert type(ex_div_step) == int, 'ex_div_step needs to be an integer!'
         
+        if ex_div_date is not None:
+            warnings.warn('''This message is a reminder to make sure that, since you defined ex_div_date,
+                          the freq_by parameter is set to "days" instead of "N".''')
+        
         self.spot_price = S0
         self.dividend_dollar = div
         self.dividend_yield = div_yield
-        self.ex_div_date = parser.parse(ex_div_date) if ex_div_date!= None else None
+        self.ex_div_date = parser.parse(ex_div_date, dayfirst = dayfirst) if ex_div_date!= None else None
         self.ex_div_step = ex_div_step
         
     def dividend_info(self):
@@ -69,13 +66,16 @@ class base_asset:
         """
         
         info1 = 'Dollar dividends: \t ${0:.2f}.\n'.format(self.dividend_dollar)
-        info2 = 'Dividend yield: \t {0:.2f}%.\n'.format(self.dividend_yield)
+        info2 = 'Dividend yield: \t {0:.2f}%.\n'.format(self.dividend_yield*100)
         
         info4 = 'Dividend to occur at step {}.'.format(self.ex_div_step)
         
         if self.ex_div_date == None:
             if self.ex_div_step == None:
-                print("No dividend payment expected during the course of the contract.")
+                if self.dividend_yield != 0.0:
+                    print(info2)
+                else:
+                    print("No dividend payment expected during the course of the contract.")
             else:
                 
                 if self.dividend_dollar !=0:
@@ -112,31 +112,3 @@ class base_rate:
         """
         
         self.rate = r
-
-# =============================================================================
-# class base_specs:
-#     """
-#     Instance variables:
-#         
-#     - ``T`` - int
-#     - ``N`` - int
-# 
-#     """
-#     
-#     def __init__(self, T, N):
-#         """
-#             
-#         :param T: time to expiry
-#         :type T: int
-#         :param N: Number of steps from t = 0 to expiry
-#         :type N: int
-# 
-#         """        
-#         
-#         assert (T > 0) & (type(T) == int), 'T needs to be an integer with value greater than 0!'
-#         assert (N > 0) & (type(N) == int), 'N needs to be an integer with value greater than 0!'
-#         self.time_to_expiry = T
-#         self.step = N
-#         self.delta_t = T/N
-# =============================================================================
-        
