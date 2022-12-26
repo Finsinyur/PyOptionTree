@@ -1,14 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec 20 00:17:09 2022
-
-@author: leeca
-"""
-
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def visualize_tree(tree, plot_title = 'Binomial Tree', **kwds):
+def show_tree(tree, plot_title = 'Binomial Tree', **kwds):
     r"""
     Function to visualize binomial tree model, in order to translate matrix into 
     something user-friendly.
