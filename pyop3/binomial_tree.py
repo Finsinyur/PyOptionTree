@@ -58,7 +58,7 @@ class binomial_tree:
         assert freq_by in ['N', 'days'], 'Current supported frequencies are by user defined time step N or days'
         
         if freq_by == 'N':
-            assert (N > 0) & (type(N) == int), 'N needs to be an integer with value greater than 0!'
+            0
         else:
             assert (spot_date != None) & (type(T) == str),\
                 'freq_by is selected to be based on days, please define both spot_date and T (as the expiry date)!'
@@ -79,6 +79,7 @@ class binomial_tree:
         div_kwds = {k: v for k, v in kwds.items() if k in valid_kwds}
         #div, div_yield, ex_div_date, ex_div_step = divi_info # unpack collection into the respective items
         
+        self.freq_by = freq_by
         self.underlying_asset = base_conditions.base_asset(S0, dayfirst = dayfirst, **div_kwds)
         self.interest_rate = base_conditions.base_rate(r).rate
         
@@ -182,6 +183,7 @@ class binomial_tree:
         logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
         
         return self.underlying_asset.dividend_dollar * logic_matrix_5
+    
 
 
 class european_option:
@@ -243,7 +245,7 @@ class european_option:
         
         
         for i in np.arange(self.step-1, -1, -1):
-            V[:i+1,i] = self.disc_factor*(self.risk_neutral_prob*V[1:i+2,i+1] + (1-self.risk_neutral_prob)*V[:i+1,i+1])
+            V[:i+1,i] = self.disc_factor*(self.risk_neutral_prob*V[:i+1,i+1] + (1-self.risk_neutral_prob)*V[1:i+2,i+1])
             
         self.call_option = V
         self.call_value = V[0,0]
@@ -266,7 +268,7 @@ class european_option:
         
         
         for i in np.arange(self.step-1, -1, -1):
-            V[:i+1,i] = self.disc_factor*(self.risk_neutral_prob*V[1:i+2,i+1] + (1-self.risk_neutral_prob)*V[:i+1,i+1])
+            V[:i+1,i] = self.disc_factor*(self.risk_neutral_prob*V[:i+1,i+1] + (1-self.risk_neutral_prob)*V[1:i+2,i+1])
             
         self.put_option = V
         self.put_value = V[0,0]
