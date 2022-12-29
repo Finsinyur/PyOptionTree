@@ -1,50 +1,97 @@
-import binomial_tree
-import numpy as np
-import base_conditions
-import pandas as pd
+class american_option:
+    '''
+    Instance variables:
+        
+    - ``underlying_asset`` - pyop3.binomial_tree object
+    - ``strike`` - float
+    - ``cont_disc` - bool
+    Public methods:
+        
+    - ``call()`` - calculate call opton value and generate call option tree
+    - ``put()`` - calculate put opton value and generate put option tree
+    '''
+    
+    def __init__(self, underlying_asset, strike, cont_disc = True):
+        """
+            
+        :param underlying_asset: underlying asset binomial_tree object
+        :type S0: pyop3.binomial_tree
+        :param strike: strike price of the option
+        :type strike: float
+        :param cont_disc: define discounting method - continoues or discrete. Default True
+        :type cont_disc: boolean
+        
+        """
+        self.asset_tree = underlying_asset.underlying_asset_tree()
+        self.strike = strike
+        self.u = underlying_asset.u
+        self.d = underlying_asset.d
+        self.r = underlying_asset.interest_rate
+        self.step = underlying_asset.step
+        self.time_to_expiry = underlying_asset.time_to_expiry
+        self.delta_t = underlying_asset.delta_t 
+        self.disc_factor = np.exp(-self.r * self.delta_t) if cont_disc==True else 1/(1+self.r*self.delta_t)
+        self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d)
+        
+        self.call_value = None
+        self.call_option = None
+        self.put_value = None
+        self.put_option = None
+        
+    def call(self):
+        """
+        Method to to calculate call option value.
+        Backwardation - call option value is calculated by, first, working on the hypothetical option value at terminal node. 
+        From every terminal node to its penultimate node, penultimate option value is the higher of intrinsic value at node (S-K) and the interest-rate discounted expected value evaluated using risk-neutral probability. 
+        The pattern repeats until the initial option value. 
 
-#def option_tree(S0,r,T,N,K,u,opt='european',call=True,cont_disc=False):
-def european_option_tree(self):
-    #determine d
-    self.d=1/self.u
+        Returns
+        -------
+        Numpy array.
+        """
+        V = np.zeros([self.step+1,self.step+1])
+        
+        #find V[:,-1]
+        for row in np.arange(0,self.step+1):
+            V[row,self.step+1] = self.asset_tree[0,N+1] - self.strike
+        
+        #find V[:-2] and before, all the way to V0
+        
+        for row in np.arange(0, self.step-1):
+            for col in np.arange(self.step-1,-1,-1):
+                V[row,col] = np.maximum((self.asset_tree[row,col]-self.strike), 
+                                        self.disc_factor*(self.risk_neutral_prob*self.asset_tree[row,col+1]+
+                                                          (1-self.risk_neutral_prob)*self.asset_tree[row+1,col+1]))
+            
+        self.call_option = V
+        self.call_value = V[0,0]
+        return V
     
-    #initialise the asset and option matrix
-    V=np.zeros([self.step+1,self.step+1])
-    S=np.zeros((self.step+1,self.step+1)) # Caden: We already created a class that can generate underlying asset lattice, we can just make use of that
-    
-    #discount factor
-    disc = np.exp(-self.r*delta_T) if cont_disc==True else 1/((1+self.r)**(self.step) #to confirm the formula 
-    # Caden: formula is not correct. for continuous discounting: np.exp(-self.r*delta_T); for non-cont., should be 1/(1+self.r*self.delta_t)
-    
-    #find ST first
-    #S[:,-1] = self.underlying_asset.spot_price_price*self.d**(np.arange(self.step,-1,-1))*self.u**(np.arange(0,self.step+1,1))                                           
-    # Redundant; could make use of underlying_asset_tree
-    
-    tree = np.zeros((self.step+1,self.step+1))                                                          
-    tree = fit_tree(self)
-    S = tree.underlying_asset_tree()
-    terminal_node = S[:,-1]
-                                                        
-    #set the terminal price
-    #V[:,-1] = np.maximum(0, disc*(self.spot_price-K)) if call == True else np.maximum(0, disc*(K-self.spot_price))
-    self.underlying_asset
-    V[:,-1] = np.maximum(0, disc*(terminal_node-K)) if call == True else np.maximum(0, disc*(K-terminal_node))                                                          
-    # At terminal node, should be strike - terminal spot price, which should be the last col of the underlying asset tree
-    
-    #risk-neutral probability
-    p=(1/disc-self.d)/(self.u-self.d) if cont_disc==True else (1+r-d)/(u-d) # should be cont_disc == True
-    
-    for i in np.arange(N-1,-1,-1):
-        V[:i+1,i]= disc*(V[1:i+2,i+1]*p+V[:i+1,i+1]*(1-p))
-    
-    # We can split European and American; 
-        if opt=='european':
-    # Recall: if option is American, the value of option at t is the bigger of the discounted value at t+1 or the difference between spot price and strike.
-            if call==True:
-                V[:i+1,i]= np.maximum(V[:i+1,i],S[:i+1,i]-K)
-            else:
-                V[:i+1,i]= np.maximum(V[:i+1,i],K-S[:i+1,i])
-        #else: 
-            #american_option_tree(self) #insert function of america option? 
-    
-    return V
+    def put(self):
+        """
+        Method to to calculate put option value.
+        Similar to the evaluation of call option value, backwardation is employed.
+        However, intrinsic value of put option is (K-S) instead.
+        
+        Returns
+        -------
+        Numpy array.
+        """
+
+        V = np.zeros([self.step+1,self.step+1])
+        
+        #find V[:,-1]
+        for row in np.arange(0,self.step+1):
+            V[row,self.step+1] = self.strike - self.asset_tree[0,N+1] 
+        
+        #find V[:-2] and before, all the way to V0
+        
+        for row in np.arange(0, self.step-1):
+            for col in np.arange(self.step-1,-1,-1):
+                V[row,col] = np.maximum((self.strike - self.asset_tree[row,col]), 
+                                        self.disc_factor*(self.risk_neutral_prob*self.asset_tree[row,col+1]+
+                                                          (1-self.risk_neutral_prob)*self.asset_tree[row+1,col+1]))
+                
+        self.put_option = V
+        self.put_value = V[0,0]
+        return V
