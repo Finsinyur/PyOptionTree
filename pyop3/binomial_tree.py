@@ -1,4 +1,6 @@
+import copy
 import numpy as np
+import math
 import warnings
 from inspect import signature
 
@@ -9,22 +11,23 @@ class binomial_tree:
     '''
     Instance variables:
         
-    - ``S0`` - float
-    - ``r`` - float
-    - ``T`` - float or str
-    - ``N``  - int
-    - ``u`` - float or None
-    - ``sigma`` - float or None
-    - ``spot_date`` - str or None
-    - ``day_first`` - boolean
-    - ``freq_by`` - str
+    - ``S0`` - float. The spot price of underlying asset.
+    - ``r`` - float. The interest rate used to discount future values.
+    - ``T`` - float or str. The time to expiry in number of years (int), or the expiration date (str).
+    - ``N``  - int. The number of discrete time steps until expiry. Default N = 4.
+    - ``u`` - float or None. The upward return.
+    - ``sigma`` - float or None. The implied volatility.
+    - ``spot_date`` - str or None. The current date (used if T is defined to be a date)
+    - ``day_first`` - boolean. Default True.
+    - ``freq_by`` - str. Default "N". Can take either "N" or "days".
+    - ``tree_type`` - str. Default "CRR". Can take either "CRR" (Cox-Ross-Rubinstein Tree) or "RB" (Rendleman Bartter Tree). 
 
     Public methods:
         
     - ``underlying_asset_summary()`` - print summary of underlying asset information
     - ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
     '''
-    def __init__(self, S0, r, T, N = 4, u = None, sigma = None, spot_date = None, dayfirst = True, freq_by = 'N', **kwds):
+    def __init__(self, S0, r, T, N = 4, u = None, sigma = None, spot_date = None, dayfirst = True, freq_by = 'N', tree_type = 'CRR', **kwds):
         
         """
             
@@ -58,7 +61,7 @@ class binomial_tree:
         assert freq_by in ['N', 'days'], 'Current supported frequencies are by user defined time step N or days'
         
         if freq_by == 'N':
-            0
+            assert (N > 0) & (type(N) == int), 'N must be an integer and is greater than 0!'
         else:
             assert (spot_date != None) & (type(T) == str),\
                 'freq_by is selected to be based on days, please define both spot_date and T (as the expiry date)!'
@@ -77,9 +80,10 @@ class binomial_tree:
         
         valid_kwds = signature(base_conditions.base_asset).parameters.keys()
         div_kwds = {k: v for k, v in kwds.items() if k in valid_kwds}
-        #div, div_yield, ex_div_date, ex_div_step = divi_info # unpack collection into the respective items
         
         self.freq_by = freq_by
+        self.tree_type = tree_type.upper()
+        
         self.underlying_asset = base_conditions.base_asset(S0, dayfirst = dayfirst, **div_kwds)
         self.interest_rate = base_conditions.base_rate(r).rate
         
@@ -87,9 +91,26 @@ class binomial_tree:
         self.step = N
         self.delta_t = self.time_to_expiry/N # step differential
         
+        if self.tree_type == 'CRR':
+            self.u = u if u != None else np.exp(sigma * np.sqrt(self.delta_t)) # calculate u (if not provided)
+            self.implied_vol = sigma if sigma != None else np.log(u) / np.sqrt(self.delta_t)
+            self.d = 1/self.u
+            
+        elif self.tree_type == 'RB':
+            self.u = u if u != None else np.exp((self.interest_rate - 0.5*np.power(sigma,2))*self.delta_t + sigma*np.sqrt(self.delta_t))
+            if sigma != None:
+                self.implied_vol = sigma 
+            else:
+                A = 1
+                B = -2/np.sqrt(self.delta_t)
+                C = 2/np.sqrt(self.delta_t) * (np.log(u) - self.interest_rate * self.delta_t)
+                
+                self.implied_vol = (-B + np.sqrt(np.power(B,2) - 4*A*C))/(2*A)
+                
+            self.d = np.exp((self.interest_rate  - 0.5*np.power(self.implied_vol,2))*self.delta_t - self.implied_vol * np.sqrt(self.delta_t))
         
-        self.u = u if u != None else np.exp(sigma * np.sqrt(self.delta_t)) # calculate u (if not provided)
-        self.implied_vol = sigma if sigma != None else np.log(u) / np.sqrt(self.delta_t)
+        else:
+            raise ValueError('Tree type {} not supported!'.format(self.tree_type))
         
         if 0 < self.u <= 1:
             warnings.warn('''Bad "u" defined! 
@@ -97,8 +118,8 @@ class binomial_tree:
                           "u" will behave like "d" in a Binomial tree, vice versa.''')
         elif self.u <= 0:
             raise ValueError('"u" cannot be zero or negative!')
+
             
-        self.d = 1/self.u
         
     def underlying_asset_summary(self):
         """
@@ -146,6 +167,9 @@ class binomial_tree:
             S *= (1 - self.underlying_asset.dividend_yield*self.delta_t)
             
         return S
+    
+    def copy(self):
+        return copy.copy(self)
     
     def __dividend_tree__(self):
         """
@@ -221,7 +245,12 @@ class european_option:
         self.time_to_expiry = underlying_asset.time_to_expiry
         self.delta_t = underlying_asset.delta_t 
         self.disc_factor = np.exp(-self.r * self.delta_t) if cont_disc==True else 1/(1+self.r*self.delta_t)
-        self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d)
+        self.tree_type = underlying_asset.tree_type
+        
+        if self.tree_type == 'CRR':
+            self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d) 
+        elif self.tree_type == 'RB':
+            self.risk_neutral_prob = 0.5
         
         self.call_value = None
         self.call_option = None
@@ -253,7 +282,7 @@ class european_option:
     
     def put(self):
         """
-        Method to to calculate put option value.
+        Method to calculate put option value.
         During the running of the method, derived put option value and put optiion tree
         are assigned to the object's put_value and put_option attributes respectively.
 
@@ -273,6 +302,58 @@ class european_option:
         self.put_option = V
         self.put_value = V[0,0]
         return V
+    
+    def fast_put_call(self):
+        """
+        Method to calculate European call and put option values.
+        No lattice is generated using this method.
+        Value of call is calculated by working directly on the terminal call values by:
+        (value of call) = (terminal call value) * (probability of occurance at node) * (number of node instances) * (discount factor)
+        
+        Value of put is calculated using call-put parity
+        (value of put) = (value of call) + (strike) * (discount factor) - (spot price)
+        
+        Assign output to object attribute directly.
+
+        Returns
+        -------
+        Dictionary.
+        """
+        probabilities_matrix = np.zeros((self.step+1, self.step))
+        probabilities_matrix[:self.step,:] += self.risk_neutral_prob * np.triu(np.ones((self.step)))
+        probabilities_matrix[1:,:] += (1-self.risk_neutral_prob) * np.tril(np.ones((self.step)))
+        
+        freq_matrix = np.array([self.__nCr__(i) for i in range(self.step+1)])
+        terminal_probabilities = np.multiply(probabilities_matrix.prod(axis = 1), freq_matrix)
+        
+        terminal_call_values = np.maximum(0, self.asset_tree[:,-1] - self.strike)
+        self.call_value = np.dot(terminal_call_values, terminal_probabilities) * np.power(self.disc_factor, self.step)
+        self.__call_put_parity__()
+        
+        return {'call': self.call_value, 'put': self.put_value}
+        
+        
+        
+    def __nCr__(self,r):
+        """
+        Method to calculate for number of node instances. Calculates Combination.
+        
+        return float.
+        """
+        return math.factorial(self.step)/(math.factorial(r) * math.factorial(self.step - r))
+    
+    def __call_put_parity__(self):
+        """
+        Method to calculate call or put value. Use put-call parity.
+        (value of call) + (strike) * (discount factor)  = (value of put) + (spot price)
+        Assign output to object attribute directly.
+        return None.
+        """
+        assert (self.call_value != None) or (self.put_value != None), 'Please calculate either call or put first!'
+        if self.call_value != None:
+            self.put_value = self.call_value + self.strike * np.power(self.disc_factor, self.step) - self.asset_tree[0,0]
+        else:
+            self.call_value = self.put_value + self.asset_tree[0,0] - self.strike * np.power(self.disc_factor, self.step)
 
 
     
