@@ -44,7 +44,6 @@ class american_option:
         Backwardation - call option value is calculated by, first, working on the hypothetical option value at terminal node. 
         From every terminal node to its penultimate node, penultimate option value is the higher of intrinsic value at node (S-K) and the interest-rate discounted expected value evaluated using risk-neutral probability. 
         The pattern repeats until the initial option value. 
-
         Returns
         -------
         Numpy array.
@@ -53,15 +52,14 @@ class american_option:
         
         #find V[:,-1]
         for row in np.arange(0,self.step+1):
-            V[row,self.step+1] = self.asset_tree[0,N+1] - self.strike
+            V[row,self.step] = np.maximum(0,self.asset_tree[row,self.step] - self.strike)
         
         #find V[:-2] and before, all the way to V0
-        
-        for row in np.arange(0, self.step-1):
-            for col in np.arange(self.step-1,-1,-1):
+        for col in np.arange(self.step-1,-1,-1):
+            for row in np.arange(0,col+1):
                 V[row,col] = np.maximum((self.asset_tree[row,col]-self.strike), 
-                                        self.disc_factor*(self.risk_neutral_prob*self.asset_tree[row,col+1]+
-                                                          (1-self.risk_neutral_prob)*self.asset_tree[row+1,col+1]))
+                                        self.disc_factor*(self.risk_neutral_prob*V[row,col+1]+
+                                                          (1-self.risk_neutral_prob)*V[row+1,col+1]))
             
         self.call_option = V
         self.call_value = V[0,0]
@@ -82,16 +80,15 @@ class american_option:
         
         #find V[:,-1]
         for row in np.arange(0,self.step+1):
-            V[row,self.step+1] = self.strike - self.asset_tree[0,N+1] 
+            V[row,self.step] = np.maximum(0,self.strike - self.asset_tree[row,self.step])
         
         #find V[:-2] and before, all the way to V0
-        
-        for row in np.arange(0, self.step-1):
-            for col in np.arange(self.step-1,-1,-1):
-                V[row,col] = np.maximum((self.strike - self.asset_tree[row,col]), 
-                                        self.disc_factor*(self.risk_neutral_prob*self.asset_tree[row,col+1]+
-                                                          (1-self.risk_neutral_prob)*self.asset_tree[row+1,col+1]))
-                
+        for col in np.arange(self.step-1,-1,-1):
+            for row in np.arange(0,col+1):
+                V[row,col] = np.maximum((self.strike-self.asset_tree[row,col]), 
+                                        self.disc_factor*(self.risk_neutral_prob*V[row,col+1]+
+                                                          (1-self.risk_neutral_prob)*V[row+1,col+1]))
+            
         self.put_option = V
         self.put_value = V[0,0]
         return V
