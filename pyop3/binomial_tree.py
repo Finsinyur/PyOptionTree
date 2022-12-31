@@ -8,7 +8,7 @@ from . import base_conditions
 from dateutil import parser
 
 class binomial_tree:
-    '''
+    """
     Instance variables:
         
     - ``S0`` - float. The spot price of underlying asset.
@@ -26,7 +26,7 @@ class binomial_tree:
         
     - ``underlying_asset_summary()`` - print summary of underlying asset information
     - ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
-    '''
+    """
     def __init__(self, S0, r, T, N = 4, u = None, sigma = None, spot_date = None, dayfirst = True, freq_by = 'N', tree_type = 'CRR', **kwds):
         
         """
@@ -211,7 +211,7 @@ class binomial_tree:
 
 
 class european_option:
-    '''
+    """
     Instance variables:
         
     - ``underlying_asset`` - pyop3.binomial_tree object
@@ -222,7 +222,7 @@ class european_option:
         
     - ``call()`` - calculate call opton value and generate call option tree
     - ``put()`` - calculate put opton value and generate put option tree
-    '''
+    """
     
     def __init__(self, underlying_asset, strike, cont_disc = True):
         """
@@ -305,30 +305,24 @@ class european_option:
     
     def fast_put_call(self):
         """
-        Method to calculate European call and put option values.
-        No lattice is generated using this method.
-        Value of call is calculated by working directly on the terminal call values by:
-        (value of call) = (terminal call value) * (probability of occurance at node) * (number of node instances) * (discount factor)
-        
-        Value of put is calculated using call-put parity
-        (value of put) = (value of call) + (strike) * (discount factor) - (spot price)
-        
-        Assign output to object attribute directly.
+        Method to swiftly calculate both call and put option values.
+        The method works directly on the terminal option payoff without creating the tree.
+        Once the call value is derived directly, the put option is calculated using the call-put parity.
+        Once method finishes the calculation, call and put option values are assigned to the respective attributes.
 
         Returns
         -------
         Dictionary.
         """
-        probabilities_matrix = np.zeros((self.step+1, self.step))
-        probabilities_matrix[:self.step,:] += self.risk_neutral_prob * np.triu(np.ones((self.step)))
-        probabilities_matrix[1:,:] += (1-self.risk_neutral_prob) * np.tril(np.ones((self.step)))
+        
+        probabilities = self.risk_neutral_prob**(np.arange(self.step, -1, -1))*(1 - self.risk_neutral_prob)**(np.arange(0, self.step+1, 1))
         
         freq_matrix = np.array([self.__nCr__(i) for i in range(self.step+1)])
-        terminal_probabilities = np.multiply(probabilities_matrix.prod(axis = 1), freq_matrix)
+        terminal_probabilities = np.multiply(probabilities, freq_matrix)
         
         terminal_call_values = np.maximum(0, self.asset_tree[:,-1] - self.strike)
         self.call_value = np.dot(terminal_call_values, terminal_probabilities) * np.power(self.disc_factor, self.step)
-        self.__call_put_parity__()
+        self.call_put_parity()
         
         return {'call': self.call_value, 'put': self.put_value}
         
@@ -336,26 +330,30 @@ class european_option:
         
     def __nCr__(self,r):
         """
-        Method to calculate for number of node instances. Calculates Combination.
+        Private method to calculate combination, to be used for fast_put_call().
         
-        return float.
+        Returns
+        -------
+        Float.
         """
         return math.factorial(self.step)/(math.factorial(r) * math.factorial(self.step - r))
     
-    def __call_put_parity__(self):
+    def call_put_parity(self):
         """
-        Method to calculate call or put value. Use put-call parity.
-        (value of call) + (strike) * (discount factor)  = (value of put) + (spot price)
-        Assign output to object attribute directly.
-        return None.
+        Method to calculate call or put option value, provided either call_value or put_value is computed.
+        
+        Returns
+        -------
+        None.
         """
         assert (self.call_value != None) or (self.put_value != None), 'Please calculate either call or put first!'
         if self.call_value != None:
             self.put_value = self.call_value + self.strike * np.power(self.disc_factor, self.step) - self.asset_tree[0,0]
         else:
             self.call_value = self.put_value + self.asset_tree[0,0] - self.strike * np.power(self.disc_factor, self.step)
+
 class american_option:
-    '''
+    """
     Instance variables:
         
     - ``underlying_asset`` - pyop3.binomial_tree object
@@ -365,7 +363,7 @@ class american_option:
         
     - ``call()`` - calculate call opton value and generate call option tree
     - ``put()`` - calculate put opton value and generate put option tree
-    '''
+    """
     
     def __init__(self, underlying_asset, strike, cont_disc = True):
         """
