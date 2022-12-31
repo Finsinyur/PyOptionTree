@@ -385,7 +385,12 @@ class american_option:
         self.time_to_expiry = underlying_asset.time_to_expiry
         self.delta_t = underlying_asset.delta_t 
         self.disc_factor = np.exp(-self.r * self.delta_t) if cont_disc==True else 1/(1+self.r*self.delta_t)
-        self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d)
+        self.tree_type = underlying_asset.tree_type
+        
+        if self.tree_type == 'CRR':
+            self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d) 
+        elif self.tree_type == 'RB':
+            self.risk_neutral_prob = 0.5
         
         self.call_value = None
         self.call_option = None
