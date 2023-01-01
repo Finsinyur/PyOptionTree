@@ -1,3 +1,7 @@
+<p align="center">
+    <img width=20% src="https://github.com/Finsinyur/PyOptionTree/blob/main/media/PyOp3_logo_v0.png?raw=true">
+</p>
+
 # PyOptionTree
 
 PyOptionTree is a package designed for implementing lattice models for option pricing.
