@@ -1,16 +1,62 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan  2 00:07:19 2023
-
-@author: leeca
-"""
-
 from . import binomial_tree, european_option, american_option, base_conditions
 from inspect import signature
 from scipy.optimize import brentq
 
 
 def calibrate_european(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+    r"""
+    Function to calibrate parameters to match the market price of European option.
+    The function will take in all available parameters and calibrate to match the market price by finding
+    the closest possible value of upward movement u, and thereby the calibrated implied vol.
+    
+    Parameters
+    ----------
+    V : float
+        The option market price.
+        
+    S0 : float
+         The underlying asset spot price.
+    
+    K : float
+        The option strike price.
+        
+    r : float
+        The relevant interest rate (annualized).
+    
+    T : float or string
+        If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
+    
+    calibrate_range : tuple or list
+                      contains the minimum guess of u and the maximum guess of u, in this order.
+    
+    call : boolean
+           If True, the option to calibrate is a call option. Otherwise it is a put option.
+    
+    kwds : optional keywords. 
+           See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
+           
+    Output
+    ----------
+    pyop3.binomial_tree object
+
+    Examples
+    --------
+    >>> S0 = 366.02
+    >>> V = 6.35
+    >>> K = 366
+    >>> r = 0.014216
+
+    >>> spot_date = '01-12-2020'
+    >>> T = '18-12-2020'
+    >>> ex_div_date = '18-12-2020'
+    
+    calibrated_res = pyop3_test.calibrate_european(V, S0, K, r, T, call = False, div = 1.58,\
+                                          spot_date=spot_date, ex_div_date = ex_div_date)
+        
+    calibrated_res.underlying_asset_summary()
+    print(calibrated_res.u)
+
+    """
     div_valid_kwds = signature(base_conditions.base_asset).parameters.keys()
     div_kwds = {k: v for k, v in kwds.items() if k in div_valid_kwds}
     
@@ -29,6 +75,59 @@ def calibrate_european(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
     return binomial_tree(S0, r, T, u = u, **bt_kwds, **div_kwds)
 
 def calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+    r"""
+    Function to calibrate parameters to match the market price of American option.
+    The function will take in all available parameters and calibrate to match the market price by finding
+    the closest possible value of upward movement u, and thereby the calibrated implied vol.
+    
+    Parameters
+    ----------
+    V : float
+        The option market price.
+        
+    S0 : float
+         The underlying asset spot price.
+    
+    K : float
+        The option strike price.
+        
+    r : float
+        The relevant interest rate (annualized).
+    
+    T : float or string
+        If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
+    
+    calibrate_range : tuple or list
+                      contains the minimum guess of u and the maximum guess of u, in this order.
+    
+    call : boolean
+           If True, the option to calibrate is a call option. Otherwise it is a put option.
+    
+    kwds : optional keywords. 
+           See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
+           
+    Output
+    ----------
+    pyop3.binomial_tree object
+
+    Examples
+    --------
+    >>> S0 = 366.02
+    >>> V = 6.35
+    >>> K = 366
+    >>> r = 0.014216
+
+    >>> spot_date = '01-12-2020'
+    >>> T = '18-12-2020'
+    >>> ex_div_date = '18-12-2020'
+    
+    calibrated_res = pyop3_test.calibrate_american(V, S0, K, r, T, call = False, div = 1.58,\
+                                          spot_date=spot_date, ex_div_date = ex_div_date)
+        
+    calibrated_res.underlying_asset_summary()
+    print(calibrated_res.u)
+
+    """
     
     div_valid_kwds = signature(base_conditions.base_asset).parameters.keys()
     div_kwds = {k: v for k, v in kwds.items() if k in div_valid_kwds}
@@ -46,8 +145,57 @@ def calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
                                                            K).put() - V, calibrate_range[0], calibrate_range[1])
     
     return binomial_tree(S0, r, T, u = u, freq_by = 'days', **bt_kwds, **div_kwds)
-    
+
+
 def deamericanization(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+    r"""
+    Function to "deamericanize" an American option given its market price, and find the equivalent European Option.
+        
+    Parameters
+    ----------
+    V : float
+        The option market price.
+        
+    S0 : float
+         The underlying asset spot price.
+    
+    K : float
+        The option strike price.
+        
+    r : float
+        The relevant interest rate (annualized).
+    
+    T : float or string
+        If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
+    
+    calibrate_range : tuple or list
+                      contains the minimum guess of u and the maximum guess of u, in this order.
+    
+    call : boolean
+           If True, the option to calibrate is a call option. Otherwise it is a put option.
+    
+    kwds : optional keywords. 
+           See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
+           
+    Output
+    ----------
+    Dictionary.
+
+    Examples
+    --------
+    >>> S0 = 366.02
+    >>> V = 6.35
+    >>> K = 366
+    >>> r = 0.014216
+
+    >>> spot_date = '01-12-2020'
+    >>> T = '18-12-2020'
+    >>> ex_div_date = '18-12-2020'
+    
+    res = pyop3_test.deamericanization(V, S0, K, r, T, call = False, div = 1.58,\
+                                          spot_date=spot_date, ex_div_date = ex_div_date)
+
+    """
     option = "call" if call == True else "put"
     div_valid_kwds = signature(base_conditions.base_asset).parameters.keys()
     div_kwds = {k: v for k, v in kwds.items() if k in div_valid_kwds}
