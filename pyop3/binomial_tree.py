@@ -5,6 +5,7 @@ import warnings
 from inspect import signature
 
 from . import base_conditions
+from . import tools
 from dateutil import parser
 
 class binomial_tree:
@@ -21,13 +22,12 @@ class binomial_tree:
     - ``day_first`` - boolean. Default True.
     - ``freq_by`` - str. Default "N". Can take either "N" or "days".
     - ``tree_type`` - str. Default "CRR". Can take either "CRR" (Cox-Ross-Rubinstein Tree) or "RB" (Rendleman Bartter Tree). 
-
     Public methods:
         
     - ``underlying_asset_summary()`` - print summary of underlying asset information
     - ``underlying_asset_tree()`` - generate a binomial tree of the underlyng asset price
     """
-    def __init__(self, S0, r, T, N = 4, u = None, sigma = None, spot_date = None, dayfirst = True, freq_by = 'N', tree_type = 'CRR', **kwds):
+    def __init__(self, S0, r, T, N = 4, u = None, sigma = None, spot_date = None, trading_holidays = None, dayfirst = True, freq_by = 'N', tree_type = 'CRR', **kwds):
         
         """
             
@@ -65,18 +65,19 @@ class binomial_tree:
         else:
             assert (spot_date != None) & (type(T) == str),\
                 'freq_by is selected to be based on days, please define both spot_date and T (as the expiry date)!'
-
+                
+        self.trading_holidays = trading_holidays
+        
         if spot_date == None:
             assert (T > 0), 'Spot date undefined! T needs to be greater than 0!'
             self.time_to_expiry = T
         else:
-            spot_date = parser.parse(spot_date, dayfirst = dayfirst)
-            time_to_exp = parser.parse(T, dayfirst = dayfirst) - spot_date
-            assert time_to_exp.days >= 0, 'Spot date needs to be before T, the expiry date!'
-            self.time_to_expiry = time_to_exp.days/365
+            
+            trading_days = tools.get_trading_days(spot_date, T, self.trading_holidays)
+            self.time_to_expiry = trading_days/252
         
         if freq_by == 'days':
-            N = time_to_exp.days
+            N = trading_days
         
         valid_kwds = signature(base_conditions.base_asset).parameters.keys()
         div_kwds = {k: v for k, v in kwds.items() if k in valid_kwds}
@@ -169,6 +170,13 @@ class binomial_tree:
         return S
     
     def copy(self):
+        """
+        Method to allow creation of a copy of the binomial_tree obj.
+        
+        Returns
+        -------
+        pyop3 binomial_tree.
+        """
         return copy.copy(self)
     
     def __dividend_tree__(self):
@@ -182,8 +190,8 @@ class binomial_tree:
 
         """
         if self.underlying_asset.ex_div_date != None:
-            div_day = self.underlying_asset.ex_div_date - self.spot_date
-            div_step = div_day.days 
+            div_step = tools.get_trading_days(self.spot_date, self.underlying_asset.ex_div_date, self.trading_holidays)
+            
         elif self.underlying_asset.ex_div_step != None:
             div_step = self.underlying_asset.ex_div_step
         else:
@@ -265,7 +273,7 @@ class european_option:
 
         Returns
         -------
-        Numpy array.
+        Float.
 
         """
         V = np.zeros([self.step+1,self.step+1])
@@ -288,7 +296,7 @@ class european_option:
 
         Returns
         -------
-        Numpy array.
+        Float.
         """
 
         V = np.zeros([self.step+1,self.step+1])
@@ -352,6 +360,7 @@ class european_option:
         else:
             self.call_value = self.put_value + self.asset_tree[0,0] - self.strike * np.power(self.disc_factor, self.step)
 
+
 class american_option:
     """
     Instance variables:
@@ -405,7 +414,7 @@ class american_option:
         The pattern repeats until the initial option value. 
         Returns
         -------
-        Numpy array.
+        Float.
         """
         V = np.zeros([self.step+1,self.step+1])
         
@@ -422,7 +431,7 @@ class american_option:
             
         self.call_option = V
         self.call_value = V[0,0]
-        return V
+        return V[0,0]
     
     def put(self):
         """
@@ -432,7 +441,7 @@ class american_option:
         
         Returns
         -------
-        Numpy array.
+        Float.
         """
 
         V = np.zeros([self.step+1,self.step+1])
@@ -450,7 +459,4 @@ class american_option:
             
         self.put_option = V
         self.put_value = V[0,0]
-        return V
-
-
-    
+        return V[0,0]
