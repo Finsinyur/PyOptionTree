@@ -1,15 +1,31 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jan  1 23:15:59 2023
-
-@author: leeca
-"""
-
 import numpy as np
 from dateutil import parser
 
 def get_trading_days(start, end, trading_holidays = None, dayfirst = True):
+    r"""
+    Function to calculate trading days between the start date and the end date.
     
+    Parameters
+    ----------
+    start : str
+            The start date.
+    
+    end : str
+          The end date.
+    
+    trading_holidays : str or list or tuple
+                       A collection of the trading holidays between start and end dates. Default None.
+            
+    dayfirst : boolean
+               Define if the date starts with the day or the month. Default True
+
+    Output
+    --------
+    trading_days : Numeric.
+                   Number of trading days between start and end dates.
+
+
+    """
     start_date = parser.parse(start, dayfirst = dayfirst).date()
     end_date = parser.parse(end, dayfirst = dayfirst).date()
     trading_days = np.busday_count(start_date, end_date)
@@ -32,5 +48,3 @@ def get_trading_days(start, end, trading_holidays = None, dayfirst = True):
     trading_days -= total_valid_exclusions
     
     return trading_days
-    
-    
