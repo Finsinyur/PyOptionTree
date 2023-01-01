@@ -79,8 +79,27 @@ Output:
 ## Overview of Binomial tree option pricing models
 
 ## Features
+This section documents the features of PyOptionTree, with brief introduction of each features.
+A comprehensive demonstration of the PyOptionTree may be found in the tutorials [here](https://github.com/Finsinyur/PyOptionTree/tree/main/tutorials).
 
 ### Underlying asset price dynamics
+Similar to the basic approach to binomial tree option pricing, all impementation of option pricing starts with creating the binomial tree to illustrate the underlying asset price dynamics. The below image summarizes the implementation of the PyOptionTree.
+
+<img width=50% src="https://github.com/Finsinyur/PyOptionTree/blob/main/tutorials/img/tut1_pic1.png?raw=true">
+
+- Define expiry and number of discrete steps during the contract lifetime:
+
+  - the most basic approach is a user-defined time-to-expiry, this is defined by the number of years; the number of discrete steps is flexible as long as it is a whole number
+  - alternatively, user can define the spot date (current date) and the expiration date; this feature is created to fit real world analysis, in which users are given expiration date of the contract rather than the time-to-expiry; the number of discrete steps can be flexible (either user-defined or in numebr of days) in absence of an ex-div date
+  - if an ex-div date is defined the number of discrete steps is then strictly in days
+
+- Define type of binomial tree
+  - At the moment, only two types of tree are supported, namely the CRR Tree and the RB Tree
+
+- Define upward and downward multipliers, $u$ and $d$
+  - Users can directly define the upward multiplier $u$; depending on the type of tree defined, the corresponding downward multiplier $d$ will be calculated
+  - Alternatively, to suit real-world analysis, user can provide the implied volatility $\sigma$; the $u$ and $d$ will be calculated based on the tree type
+
 
 ### Dividends treatment
 
@@ -93,8 +112,6 @@ Output:
 ### Calibration
 
 
-### Underlying Asset Price Tree
-In all tree models, the first step to solving for the option price is to evaluate the price dynamics of the underlying asset over time.
 
 ## Advantages of project
 
