@@ -35,4 +35,9 @@ In all tree models, the first step to solving for the option price is to evaluat
 
 ## Advantages of project
 
+## Contributing
+
+We welcome contributions from the community! More will be shared on how contributions to the package can be made.
+
+
 ## Getting in touch
