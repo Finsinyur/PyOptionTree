@@ -13,6 +13,24 @@ As a start, the Binomial tree algorithm implemented is based on the Cox-Ross-Rub
 
 Version: v0.1.0
 
+## Table of contents
+
+-   [Getting started](#getting-started)
+-   [A quick example](#a-quick-example)
+-   [Overview of Binomial tree option pricing models](#overview-of-binomial-tree-option-pricing-models)
+-   [Features](#features)
+    -   [Underlying asset price dynamics](#underlying-asset-price-dynamics)
+    -   [Trading days](#trading-days)
+    -   [Dividends and yield treatment](#dividends-and-yield-treatment)
+    -   [European options](#european-options)
+    -   [American options](#american-options)
+    -   [Visualizing the tree](#visualizing-the-tree)
+    -   [Calibration](#calibration)
+    -   [Exotic options](#exotic-options)
+-   [Advantages of PyOptionTree](#advantages-of-pyoptiontree)
+-   [Contributing](#contributing)
+-   [Getting in touch](#getting-in-touch)
+
 ## Getting Started
 
 PyOptionTree is currently available on the test environment only. While we are working to push out the project into production, we welcome users to try the test version and provide us feedback on the library.
