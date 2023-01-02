@@ -11,11 +11,11 @@ various simple and exotic options. The early version of the library shall focus 
 
 As a start, the Binomial tree algorithm implemented is based on the Cox-Ross-Rubenstein market model, published by Cox et al in their 1979 paper "Option Pricing: A Simplified Approach". For future extension, other alternatives will be incorporated, such as the Rendleman-Bartter (RB) tree and various improvements. In further future, the package will aim to include Trinomial tree models and use cases beyond option pricing.
 
-Version: v0.0.1
+Version: v0.1.0
 
 ## Getting Started
 
-PyOptionTree is currently available on the test environment only. While we are working to push out the project to production, we welcome users to try the test version and provide us feedback on the library.
+PyOptionTree is currently available on the test environment only. While we are working to push out the project into production, we welcome users to try the test version and provide us feedback on the library.
 
 For test version, one can download the package by:
 
@@ -99,15 +99,55 @@ Similar to the basic approach to binomial tree option pricing, all impementation
 
 - Define type of binomial tree
   - At the moment, only two types of tree are supported, namely the CRR Tree and the RB Tree
+  - Advanced tree models, including various improvements to the original tree models, trinomial tree, and other complex models will be introduced in future improvement
 
 - Define upward and downward multipliers, $u$ and $d$
   - Users can directly define the upward multiplier $u$; depending on the type of tree defined, the corresponding downward multiplier $d$ will be calculated
   - Alternatively, to suit real-world analysis, user can provide the implied volatility $\sigma$; the $u$ and $d$ will be calculated based on the tree type
 
+### Trading days
+Embedded into the PyOptionTree library and also callable as a function, PyOptionTree offers a simple-to-use solution for calculating the number of trading days between two distinct dates. User simply needs to provide the start date, end date, and a collection of trading holidays for this to work.
 
-### Dividends treatment
+```bash
+nbr_trading_days = pyop3.tools.get_trading_days('01-12-2020', '10-01-2021',\
+                                                trading_holidays = ['24-12-2020', '25-12-2020',\
+                                                                    '31-12-2020', '01-01-2021'])
+print(nbr_trading_days)
+```
+
+Output:
+```bash
+25
+```
+
+Future improvement to the function may include connecting to a reliable trading calendar source to automatically retrieve the trading holidays.
+
+
+### Dividends and yield treatment
+PyOptionTree supports inclusion of known dollar dividends (up to only one dividend payment during the option lifetime) and known yield.
+
+- Known dollar dividends
+  - Supports known dollar dividends occuring on and before the expiration date, during the life time of the contract
+  - Due to non-recombining nature of the tree for dividends occuring midpoint, an approximation method is introduced to force tree recombination
+  - Approximation method will be enhanced and improved based on known research papers in future improvement
+  - Module will be enhanced to accomodate multiple known dollar dividends to account for option on dividend-paying asset with long time-to-expiry; at the moment, this needs to be approximated using dividend yield
+
+- Known (dividend) yield
+  - Natively supports inclusion of dividend yield
+  - Suitable for pricing of currency options, with the foreign interest rate being the ```div_yield```
 
 ### European options
+European option pricing is the core of binomial tree model. To initiate the European Option pricing, user needs to initialize the ```pyop3.european_option``` object by passing the ```pyop3.binomial_tree``` object and the strike price.
+
+```bash
+my_european_option = pyop3.european_option(asset_1, strike)
+```
+
+PyOptionTree computes option prices with two methods.
+
+- Distinctly calling the ```call()``` or ```put()``` methods to derive call and put values respectively
+  - by running the distinct methods, PyOptionTree will compute the entire option lattice to derive the option value
+
 
 ### American options
 
