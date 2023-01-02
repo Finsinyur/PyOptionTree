@@ -93,7 +93,7 @@ Similar to the basic approach to binomial tree option pricing, all impementation
 
 - Define expiry and number of discrete steps during the contract lifetime:
 
-  - the most basic approach is a user-defined time-to-expiry, this is defined by the number of years; the number of discrete steps is flexible as long as it is a whole number
+  - the most basic approach is a user-defined time-to-expiry, this is defined by the number of years; the number of discrete steps is flexible as long as it is a whole number; by default the number of time step is 4
   - alternatively, user can define the spot date (current date) and the expiration date; this feature is created to fit real world analysis, in which users are given expiration date of the contract rather than the time-to-expiry; the number of discrete steps can be flexible (either user-defined or in numebr of days) in absence of an ex-div date
   - if an ex-div date is defined the number of discrete steps is then strictly in days
 
@@ -128,6 +128,7 @@ PyOptionTree supports inclusion of known dollar dividends (up to only one divide
 
 - Known dollar dividends
   - Supports known dollar dividends occuring on and before the expiration date, during the life time of the contract
+  - When applied, user <b>must</b> define either the ex-dividend date ```ex_div_date``` or the step which ex-div occurs ```ex_div_step```
   - Due to non-recombining nature of the tree for dividends occuring midpoint, an approximation method is introduced to force tree recombination
   - Approximation method will be enhanced and improved based on known research papers in future improvement
   - Module will be enhanced to accomodate multiple known dollar dividends to account for option on dividend-paying asset with long time-to-expiry; at the moment, this needs to be approximated using dividend yield
@@ -140,6 +141,7 @@ PyOptionTree supports inclusion of known dollar dividends (up to only one divide
 European option pricing is the core of binomial tree model. To initiate the European Option pricing, user needs to initialize the ```pyop3.european_option``` object by passing the ```pyop3.binomial_tree``` object and the strike price.
 
 ```bash
+strike = 300
 my_european_option = pyop3.european_option(asset_1, strike)
 ```
 
@@ -147,17 +149,70 @@ PyOptionTree computes option prices with two methods.
 
 - Distinctly calling the ```call()``` or ```put()``` methods to derive call and put values respectively
   - by running the distinct methods, PyOptionTree will compute the entire option lattice to derive the option value
+  - after the methods are called, option value can be called for with the attributes ```call_value``` and ```put_value``` respectively
 
+```bash
+# To calculate call value, we need to first run the .call() method of the option object
+asset_1_options.call()
+print(asset_1_options.call_value)
+```
+
+Output
+```bash
+23.377924012466476
+```
+
+Do note that the option price above is likely inaccurate as we are using the default number of time steps (4) which is not sufficient to converge to the analytical solution.
+
+- Calculate both call and put option values using the ```fast_put_call()``` method
+  - Uniquely for European options, the option value can be derive solely with the terminal option payoffs without having to work backward
+  - PyOptionTree works directly on the terminal call option payoff to arrive at the call option value
+  - Once calculated, PyOptionTree will make use of put-call parity to get the respective put option value
+  - This reduces the execution time by 80%
+  - The method returns a dictionary of call and put values; the values are also assigned to the respective object attributes
+  - No option lattice is created in this implementation
+
+```bash
+# Calculate call and put option values using fast method
+my_european_option.fast_put_call()
+```
+Output
+```bash
+{'call': 23.377924012466476, 'put': 15.484427768048135}
+```
 
 ### American options
+Binomial tree option pricing model really shines when it comes to deriving the value of American options.
+Similar to the European option, user needs to initialize the ```pyop3.american_option``` object by passing the ```pyop3.binomial_tree``` object and the strike price.
+As American options requires working backwards on every nodes in each time step, there is only one method to calculate call and put options, which is by explicitly calling the ```call()``` and ```put()``` methods.
 
 ### Visualizing the tree
+One value PyOptionTree offers its users is that the rendering of the binomial tree can be easily called by using its function ```pyop3.tree_planter.show_tree()```.
+User simply needs to pass the numpy array which represents the lattice. The function currently offers some customizations, including setting the title of the plot, changing the node colors, among others.
+
+This function builds on top of ```networkx``` and ```matplotlib.pyplot``` libraries. The function currently does not work with subplots.
 
 ### Calibration
+To enhance usability of PyOptionTree, two calibrations are embedded in the functionalities.
+
+- Calibrating to market data
+  - Users are able to calibrate the binomial tree model to the market prices
+  - PyOptionTree supports calibrating of American and European options
+  - The output of the calibration is a ```pyop3.binomial_tree``` object with the calibrated ```u``` and ```implied_vol```
+  - The calibrated values can be used to price more exotic options
+
+- Deamericanization
+  - Building on top of the calibration, PyOptionTree also supports deamericanization of American options to derive at the equivalent European option prices
+
+### Exotic options
+Exotic options are currently in the project pipeline and will be released in due time.
 
 
-
-## Advantages of project
+## Advantages of PyOptionTree
+- designed to be easy-to-use by users with varied python programming experience
+- incorporated concepts based on intensive academic research papers
+- structured to accomodate practical implementations
+- interoperable with proprietary models via Python
 
 ## Contributing
 
@@ -170,3 +225,6 @@ PyOptionTree is currently maintained by:
 
 
 ## Getting in touch
+
+If you experience any problem with PyOptionTree, please raise a GitHub issue.
+You may get in touch with me at: caden.finsinyur@gmail.com
