@@ -11,7 +11,7 @@ various simple and exotic options. The early version of the library shall focus 
 
 As a start, the Binomial tree algorithm implemented is based on the Cox-Ross-Rubenstein market model, published by Cox et al in their 1979 paper "Option Pricing: A Simplified Approach". For future extension, other alternatives will be incorporated, such as the Rendleman-Bartter (RB) tree and various improvements. In further future, the package will aim to include Trinomial tree models and use cases beyond option pricing.
 
-Version: v0.1.0
+Version: v0.1.3.
 
 ## Table of contents
 
