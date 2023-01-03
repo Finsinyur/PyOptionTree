@@ -100,6 +100,29 @@ Output:
 
 ## Overview of Binomial tree option pricing models
 
+The Binomial tree algorithm was first introduced by Cox et. al in their 1979 paper "Option Pricing: A Simplified Approach". The tree model, famously known as the Cox-Ross-Rubinstein Tree (or CRR Tree for short) offers readers a simple-to-understand approach to option pricing while adhering to the no-arbitrage condition. Its simplistic and elegant approach may be what caused its to be mistaken as the predecessor of the Black-Scholes model (which was infact founded in 1973) by beginners. It also doesn't help that the CRR Tree is commonly used as the primer to option pricing for most financial mathematics and derivatives courses.
+
+The steps to applying the binomial tree pricing algorithm are fairly straightforward; starting with the spot price $S_0$, to price a European option,
+1. Define the upward multiplier $u$, which results in a price level $S_{(1,2)}^u$ which is higher than $S_0$, and the corresponding downward multiplier $d$ to get the lower price level $S_{(1,1)}^d$; these represents the potential upside and downside of the underlying asset, which gives us two states in the next time step
+2. With $u$ and $d$ defined, calculate the risk neutral probability of an upward movement $p$; $p$ is risk-neutral as the discounted mean of the two states in the next time step will be equal to the current price 
+3. Now work forward into the next $N$ steps; this creates a lattice where each node represents a price level, starting with $S_0$, and from each node there exists two branches that lead to two states - one the upside state $S_{(i,j)}^u$ and the other the downside state $S_{(i,j)}^d$; $i$ refers to the time step of the node, $j$ refers to the node number in that time step
+4. Apply the option payoff function at time $T$ on all the terminal states represented by the terminal nodes
+5. Finally, work backwards by taking the discounted mean of option payoff at the terminal nodes; this will give us the required option value
+
+The Cox-Ross-Rubinstein (CRR) Tree suggests a binomial model in which the price of the underlying asset can, at each point in time, move up by a factor of $u$ and down by a factor of $d$, which $d = \frac{1}{u}$. With these parameters, the log-tree is such that it is symmetrical about the spot price at time 0. Relating to the Black-Scholes model, we find
+
+$$u = e^{\sigma \sqrt{T}}, d = e^{- \sigma \sqrt{T}}, p = \frac{e^{r \Delta t} - d}{u - d}$$
+
+In the same year, Rendleman and Bartter also provided their suggestions of the Binomial tree option pricing algorithm. It looks similar to that of the CRR tree, except that it restricts the risk-neutral probability to $p = 0.5$. This means that the log-tree is no longer symmetrical about the spot price at time 0.
+
+$$p = \frac{1}{2}, u = e^{(r-0.5\sigma^2)\Delta t + \sigma \sqrt{\Delta t}}, d = e^{(r-0.5\sigma^2)\Delta t - \sigma \sqrt{\Delta t}}$$
+
+The RB tree has upward and downward movements similar to the discrete version of the Black-Schole model of asset price dynamic, which takes the form
+
+$$S_{t + \Delta t} = S_0e^{(r - 0.5 \sigma^2)\Delta t + \sigma (W_{t+\Delta t} - W_t)}$$
+
+```pyop3``` currently allows implementation of both the CRR tree and the RB tree. In order to support both academic and practical use-cases, ```pyop3``` has incorporated the following features.
+
 ## Features
 This section documents the features of PyOptionTree, with brief introduction of each features.
 A comprehensive demonstration of the PyOptionTree may be found in the tutorials [here](https://github.com/Finsinyur/PyOptionTree/tree/main/tutorials).
