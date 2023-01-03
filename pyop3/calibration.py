@@ -3,7 +3,7 @@ from inspect import signature
 from scipy.optimize import brentq
 
 
-def calibrate_european(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+def calibrate_european(V, S0, K, r, T, N = 50, calibrate_range = (1.0001,10.0), call = True, freq_by = "N", **kwds):
     r"""
     Function to calibrate parameters to match the market price of European option.
     The function will take in all available parameters and calibrate to match the market price by finding
@@ -26,11 +26,18 @@ def calibrate_european(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
     T : float or string
         If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
     
+    N : Int
+        Number of time step. Default is 50 to ensure convergence.
+    
     calibrate_range : tuple or list
                       contains the minimum guess of u and the maximum guess of u, in this order.
     
     call : boolean
            If True, the option to calibrate is a call option. Otherwise it is a put option.
+           
+    freq_by : str
+              Can take either "days" or "N". If "N", number of timestep is defined by user's input. If "days", function will take the number of days
+              between spot date and expiry date. Default "N".   
     
     kwds : optional keywords. 
            See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
@@ -67,14 +74,14 @@ def calibrate_european(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
     bt_kwds.pop('u', None)
     
     option = 'call' if call == True else 'put'
-    u = brentq(lambda x: european_option(binomial_tree(S0, r, T, u = x, freq_by = 'days', **bt_kwds, **div_kwds),\
+    u = brentq(lambda x: european_option(binomial_tree(S0, r, T, u = x, N = N, freq_by = freq_by, **bt_kwds, **div_kwds),\
                                                        K).fast_put_call()[option] - V,\
                calibrate_range[0], calibrate_range[1])
         
     
-    return binomial_tree(S0, r, T, u = u, **bt_kwds, **div_kwds)
+    return binomial_tree(S0, r, T, u = u, N = N,**bt_kwds, **div_kwds)
 
-def calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+def calibrate_american(V, S0, K, r, T, N = 50, calibrate_range = (1.0001,10.0), call = True, freq_by = "N", **kwds):
     r"""
     Function to calibrate parameters to match the market price of American option.
     The function will take in all available parameters and calibrate to match the market price by finding
@@ -97,11 +104,18 @@ def calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
     T : float or string
         If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
     
+    N : Int
+        Number of time step. Default is 50 to ensure convergence.
+    
     calibrate_range : tuple or list
                       contains the minimum guess of u and the maximum guess of u, in this order.
     
     call : boolean
            If True, the option to calibrate is a call option. Otherwise it is a put option.
+           
+    freq_by : str
+              Can take either "days" or "N". If "N", number of timestep is defined by user's input. If "days", function will take the number of days
+              between spot date and expiry date. Default "N".   
     
     kwds : optional keywords. 
            See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
@@ -138,16 +152,16 @@ def calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = T
     bt_kwds.pop('u', None)
     
     if call == True:
-        u = brentq(lambda x: american_option(binomial_tree(S0, r, T, u = x, freq_by = 'days', **bt_kwds, **div_kwds),\
+        u = brentq(lambda x: american_option(binomial_tree(S0, r, T, u = x, freq_by = freq_by, N = N, **bt_kwds, **div_kwds),\
                                                            K).call() - V, calibrate_range[0], calibrate_range[1])
     else:
-        u = brentq(lambda x: american_option(binomial_tree(S0, r, T, u = x, freq_by = 'days', **bt_kwds, **div_kwds),\
+        u = brentq(lambda x: american_option(binomial_tree(S0, r, T, u = x, freq_by = freq_by, N = N, **bt_kwds, **div_kwds),\
                                                            K).put() - V, calibrate_range[0], calibrate_range[1])
     
-    return binomial_tree(S0, r, T, u = u, freq_by = 'days', **bt_kwds, **div_kwds)
+    return binomial_tree(S0, r, T, u = u, freq_by = freq_by, N = N, **bt_kwds, **div_kwds)
 
 
-def deamericanization(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **kwds):
+def deamericanization(V, S0, K, r, T, N = 50, calibrate_range = (1.0001,10.0), call = True, freq_by = "N", **kwds):
     r"""
     Function to "deamericanize" an American option given its market price, and find the equivalent European Option.
         
@@ -167,12 +181,19 @@ def deamericanization(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = Tr
     
     T : float or string
         If float, this represents the time to expiry (in years). If string, this would be the date of expiry.
+        
+    N : Int
+        Number of time step. Default is 50 to ensure convergence.
     
     calibrate_range : tuple or list
                       contains the minimum guess of u and the maximum guess of u, in this order.
     
     call : boolean
            If True, the option to calibrate is a call option. Otherwise it is a put option.
+           
+    freq_by : str
+              Can take either "days" or "N". If "N", number of timestep is defined by user's input. If "days", function will take the number of days
+              between spot date and expiry date. Default "N".      
     
     kwds : optional keywords. 
            See pyop3.binomial_tree() and pyop3.base_conditions.base_asset() for a description of optional keywords.
@@ -203,7 +224,7 @@ def deamericanization(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = Tr
     bt_valid_kwds = signature(binomial_tree).parameters.keys()
     bt_kwds = {k: v for k, v in kwds.items() if k in bt_valid_kwds}
     
-    underlying_asset = calibrate_american(V, S0, K, r, T, calibrate_range = (1.0001,10.0), call = True, **bt_kwds, **div_kwds)
+    underlying_asset = calibrate_american(V, S0, K, r, T, N = N, calibrate_range = (1.0001,10.0), call = call, freq_by = freq_by, **bt_kwds, **div_kwds)
     
     equivalent_eu_option = european_option(underlying_asset, K).fast_put_call()[option]
     
