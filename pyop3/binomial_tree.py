@@ -190,7 +190,11 @@ class binomial_tree:
 
         """
         if self.underlying_asset.ex_div_date != None:
-            div_step = tools.get_trading_days(self.spot_date, self.underlying_asset.ex_div_date, self.trading_holidays)
+            days_to_dividends = tools.get_trading_days(self.spot_date, self.underlying_asset.ex_div_date, self.trading_holidays)
+            if self.freq_by == "days":
+                div_step = days_to_dividends
+            elif self.freq_by == "N":
+                div_step = int(math.ceil(days_to_dividends/self.delta_t,0))
             
         elif self.underlying_asset.ex_div_step != None:
             div_step = self.underlying_asset.ex_div_step
@@ -273,7 +277,7 @@ class european_option:
 
         Returns
         -------
-        Float.
+        Numpy array.
 
         """
         V = np.zeros([self.step+1,self.step+1])
@@ -296,7 +300,7 @@ class european_option:
 
         Returns
         -------
-        Float.
+        Numpy array.
         """
 
         V = np.zeros([self.step+1,self.step+1])
@@ -414,7 +418,7 @@ class american_option:
         The pattern repeats until the initial option value. 
         Returns
         -------
-        Float.
+        Numpy array.
         """
         V = np.zeros([self.step+1,self.step+1])
         
@@ -441,7 +445,7 @@ class american_option:
         
         Returns
         -------
-        Float.
+        Numpy array.
         """
 
         V = np.zeros([self.step+1,self.step+1])
@@ -460,3 +464,5 @@ class american_option:
         self.put_option = V
         self.put_value = V[0,0]
         return V[0,0]
+
+    
