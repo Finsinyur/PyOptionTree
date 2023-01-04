@@ -11,7 +11,7 @@ various simple and exotic options. The early version of the library shall focus 
 
 As a start, the Binomial tree algorithm implemented is based on the Cox-Ross-Rubenstein market model, published by Cox et al in their 1979 paper "Option Pricing: A Simplified Approach". For future extension, other alternatives will be incorporated, such as the Rendleman-Bartter (RB) tree and various improvements. In further future, the package will aim to include Trinomial tree models and use cases beyond option pricing.
 
-Version: v0.1.3.
+Version: v0.2.3.
 
 ## Table of contents
 
@@ -136,7 +136,7 @@ Similar to the basic approach to binomial tree option pricing, all impementation
 
   - the most basic approach is a user-defined time-to-expiry, this is defined by the number of years; the number of discrete steps is flexible as long as it is a whole number; by default the number of time step is 4
   - alternatively, user can define the spot date (current date) and the expiration date; this feature is created to fit real world analysis, in which users are given expiration date of the contract rather than the time-to-expiry; the number of discrete steps can be flexible (either user-defined or in numebr of days) in absence of an ex-div date
-  - if an ex-div date is defined the number of discrete steps is then strictly in days
+  - if an ex-div date is defined the number of discrete steps would be calculated and rounded off to the nearest whole number
 
 - Define type of binomial tree
   - At the moment, only two types of tree are supported, namely the CRR Tree and the RB Tree
@@ -145,6 +145,10 @@ Similar to the basic approach to binomial tree option pricing, all impementation
 - Define upward and downward multipliers, $u$ and $d$
   - Users can directly define the upward multiplier $u$; depending on the type of tree defined, the corresponding downward multiplier $d$ will be calculated
   - Alternatively, to suit real-world analysis, user can provide the implied volatility $\sigma$; the $u$ and $d$ will be calculated based on the tree type
+  
+- yield rate (dividend yield rate, foreign interest rate)
+  - At the moment, ```pyop3``` does not support yield rate; this limits application to strictly equity-liked assets
+  - This will be part of the improvement pipeline
 
 ### Trading days
 Embedded into the PyOptionTree library and also callable as a function, PyOptionTree offers a simple-to-use solution for calculating the number of trading days between two distinct dates. User simply needs to provide the start date, end date, and a collection of trading holidays for this to work.
@@ -164,7 +168,7 @@ Output:
 Future improvement to the function may include connecting to a reliable trading calendar source to automatically retrieve the trading holidays.
 
 
-### Dividends and yield treatment
+### Dividends treatment
 PyOptionTree supports inclusion of known dollar dividends (up to only one dividend payment during the option lifetime) and known yield.
 
 - Known dollar dividends
@@ -172,11 +176,8 @@ PyOptionTree supports inclusion of known dollar dividends (up to only one divide
   - When applied, user <b>must</b> define either the ex-dividend date ```ex_div_date``` or the step which ex-div occurs ```ex_div_step```
   - Due to non-recombining nature of the tree for dividends occuring midpoint, an approximation method is introduced to force tree recombination
   - Approximation method will be enhanced and improved based on known research papers in future improvement
-  - Module will be enhanced to accomodate multiple known dollar dividends to account for option on dividend-paying asset with long time-to-expiry; at the moment, this needs to be approximated using dividend yield
+  - Module will be enhanced to accomodate multiple known dollar dividends to account for option on dividend-paying asset with long time-to-expiry
 
-- Known (dividend) yield
-  - Natively supports inclusion of dividend yield
-  - Suitable for pricing of currency options, with the foreign interest rate being the ```div_yield```
 
 ### European options
 European option pricing is the core of binomial tree model. To initiate the European Option pricing, user needs to initialize the ```pyop3.european_option``` object by passing the ```pyop3.binomial_tree``` object and the strike price.
