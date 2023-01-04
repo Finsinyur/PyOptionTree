@@ -49,8 +49,6 @@ class binomial_tree:
         :type freq_by: str
         :param div: known dollar dividend. Default 0
         :type div: float
-        :param div_yield: known dividend yield. Default 0
-        :type div_yield: float
         :param ex_div_date: Ex-dividend date. Default None
         :type ex_div_date: str
         :param ex_div_step: Number of steps from t = 0 in which Ex-dividend occurs. Default None
@@ -88,6 +86,10 @@ class binomial_tree:
         self.underlying_asset = base_conditions.base_asset(S0, dayfirst = dayfirst, **div_kwds)
         self.interest_rate = base_conditions.base_rate(r).rate
         
+        self.dividend_dollar = self.underlying_asset.dividend_dollar
+        self.ex_div_date = self.underlying_asset.ex_div_date
+        self.ex_div_step = self.underlying_asset.ex_div_step
+        
         self.spot_date = spot_date
         self.step = N
         self.delta_t = self.time_to_expiry/N # step differential
@@ -98,17 +100,18 @@ class binomial_tree:
             self.d = 1/self.u
             
         elif self.tree_type == 'RB':
-            self.u = u if u != None else np.exp((self.interest_rate - 0.5*np.power(sigma,2))*self.delta_t + sigma*np.sqrt(self.delta_t))
+            self.u = u if u != None else \
+                np.exp((self.interest_rate - 0.5*np.power(sigma,2))*self.delta_t + sigma*np.sqrt(self.delta_t))
             if sigma != None:
                 self.implied_vol = sigma 
             else:
-                A = 1
-                B = -2/np.sqrt(self.delta_t)
-                C = 2/np.sqrt(self.delta_t) * (np.log(u) - self.interest_rate * self.delta_t)
+                A = self.delta_t
+                B = -2*np.sqrt(self.delta_t)
+                C = 2 * (np.log(u) - self.interest_rate* self.delta_t)
                 
-                self.implied_vol = (-B + np.sqrt(np.power(B,2) - 4*A*C))/(2*A)
+                self.implied_vol = (-B - np.sqrt(np.power(B,2) - 4*A*C))/(2*A)
                 
-            self.d = np.exp((self.interest_rate  - 0.5*np.power(self.implied_vol,2))*self.delta_t - self.implied_vol * np.sqrt(self.delta_t))
+            self.d = np.exp((self.interest_rate - 0.5*np.power(self.implied_vol,2))*self.delta_t - self.implied_vol * np.sqrt(self.delta_t))
         
         else:
             raise ValueError('Tree type {} not supported!'.format(self.tree_type))
@@ -161,11 +164,9 @@ class binomial_tree:
         for i in np.arange(self.step-1, -1, -1):
             S[:i+1,i] = self.underlying_asset.spot_price*self.u**(np.arange(i, -1, -1))* self.d**(np.arange(0, i+1, 1))
         
-        if self.underlying_asset.dividend_dollar != 0:
+        if self.dividend_dollar != 0:
             dividends = self.__dividend_tree__()
             S -= dividends
-        elif self.underlying_asset.dividend_yield != 0:
-            S *= (1 - self.underlying_asset.dividend_yield*self.delta_t)
             
         return S
     
@@ -189,15 +190,16 @@ class binomial_tree:
         Numpy array.
 
         """
-        if self.underlying_asset.ex_div_date != None:
-            days_to_dividends = tools.get_trading_days(self.spot_date, self.underlying_asset.ex_div_date, self.trading_holidays)
+        if self.ex_div_date != None:
+            days_to_dividends = tools.get_trading_days(self.spot_date, self.ex_div_date, self.trading_holidays)
             if self.freq_by == "days":
                 div_step = days_to_dividends
             elif self.freq_by == "N":
-                div_step = int(math.ceil(days_to_dividends/self.delta_t,0))
+                div_step = int(round(days_to_dividends/(252*self.delta_t),0))
+            self.ex_div_step = div_step
             
-        elif self.underlying_asset.ex_div_step != None:
-            div_step = self.underlying_asset.ex_div_step
+        elif self.ex_div_step != None:
+            div_step = self.ex_div_step
         else:
             return np.zeros((self.step + 1,self.step + 1))
         
@@ -218,7 +220,7 @@ class binomial_tree:
         logic_matrix_4 = np.triu(np.ones((self.step + 1)))
         logic_matrix_5 = np.multiply(logic_matrix_3, logic_matrix_4)
         
-        return self.underlying_asset.dividend_dollar * logic_matrix_5
+        return self.dividend_dollar * logic_matrix_5
     
 
 
@@ -259,10 +261,14 @@ class european_option:
         self.disc_factor = np.exp(-self.r * self.delta_t) if cont_disc==True else 1/(1+self.r*self.delta_t)
         self.tree_type = underlying_asset.tree_type
         
+        self.dividend_dollar = underlying_asset.dividend_dollar
+        self.ex_div_step = underlying_asset.ex_div_step
+        
         if self.tree_type == 'CRR':
             self.risk_neutral_prob = (1/self.disc_factor - self.d)/(self.u - self.d) 
         elif self.tree_type == 'RB':
             self.risk_neutral_prob = 0.5
+            
         
         self.call_value = None
         self.call_option = None
@@ -359,10 +365,16 @@ class european_option:
         None.
         """
         assert (self.call_value != None) or (self.put_value != None), 'Please calculate either call or put first!'
-        if self.call_value != None:
-            self.put_value = self.call_value + self.strike * np.power(self.disc_factor, self.step) - self.asset_tree[0,0]
+        
+        if self.ex_div_step != None:
+            D = self.dividend_dollar * np.power(self.disc_factor, self.step - self.ex_div_step)
         else:
-            self.call_value = self.put_value + self.asset_tree[0,0] - self.strike * np.power(self.disc_factor, self.step)
+            D = 0
+            
+        if self.call_value != None:
+            self.put_value = self.call_value + self.strike * np.power(self.disc_factor, self.step) + D - self.asset_tree[0,0]
+        else:
+            self.call_value = self.put_value + self.asset_tree[0,0] - self.strike * np.power(self.disc_factor, self.step) - D
 
 
 class american_option:
