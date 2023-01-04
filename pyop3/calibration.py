@@ -224,7 +224,7 @@ def deamericanization(V, S0, K, r, T, N = 50, calibrate_range = (1.0001,10.0), c
     bt_valid_kwds = signature(binomial_tree).parameters.keys()
     bt_kwds = {k: v for k, v in kwds.items() if k in bt_valid_kwds}
     
-    underlying_asset = calibrate_american(V, S0, K, r, T, N = N, calibrate_range = (1.0001,10.0), call = call, freq_by = freq_by, **bt_kwds, **div_kwds)
+    underlying_asset = calibrate_american(V, S0, K, r, T, N = N, calibrate_range = calibrate_range, call = call, freq_by = freq_by, **bt_kwds, **div_kwds)
     
     equivalent_eu_option = european_option(underlying_asset, K).fast_put_call()[option]
     
