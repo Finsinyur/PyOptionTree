@@ -3,7 +3,7 @@ About
 #####
 
 This project is started by a group of graduate students from Singapore Management University's Master in Quantitative Finance (MQF) programme. 
-This project is an experiment and a practical application of learned knowledge from the programme, and a mean to improve on our programming competencies.
+This project is an experiment and a practical application of learned knowledge from the programme, and a means to improve on our programming competencies.
 
 The motivation behind creating an open-source python package for the Option Tree Pricing Model is that there is generally a gap in the Python open-source libraries, 
 as compared to the more popular Monte Carlo approach and the Finite Element Difference method, to be filled. In addition, there are many interesting research papers 
