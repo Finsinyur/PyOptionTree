@@ -261,8 +261,7 @@ We welcome contributions from the community! More will be shared on how contribu
 
 PyOptionTree is currently maintained by:
 - Caden Lee
-- Kenn Ong
-- Lora Lee
+
 
 
 ## Getting in touch
